@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { unstable_cache } from "next/cache";
 import { demoStore } from "./demo-store";
 import { createSupabaseServiceClient, hasSupabaseServiceConfig } from "./supabase";
 import { findResearchIssue } from "../research-issues";
@@ -55,8 +56,7 @@ export async function updatePreferences(next: Omit<UpdateSettings, "updatedAt">,
   return settingsFromRow(data);
 }
 
-export async function listPublishedIssues() {
-  if (!hasSupabaseServiceConfig()) return listLocalPublishedIssues();
+async function listCloudPublishedIssues() {
   const client = createSupabaseServiceClient();
   const { data, error } = await client.from("research_issues").select("canonical_payload").not("published_at", "is", null).order("published_at", { ascending: false });
   if (error) {
@@ -66,6 +66,17 @@ export async function listPublishedIssues() {
   const cloudIssues = data.map((row) => row.canonical_payload as ResearchIssue);
   if (!cloudIssues.length) return listLocalPublishedIssues();
   return cloudIssues;
+}
+
+const listCachedCloudPublishedIssues = unstable_cache(
+  listCloudPublishedIssues,
+  ["published-research-issues-v1"],
+  { revalidate: 3600, tags: ["research-issues"] }
+);
+
+export async function listPublishedIssues() {
+  if (!hasSupabaseServiceConfig()) return listLocalPublishedIssues();
+  return listCachedCloudPublishedIssues();
 }
 
 export async function getPublishedIssue(identifier: string) {

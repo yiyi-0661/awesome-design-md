@@ -3,7 +3,7 @@ import { buildResearchArchive } from "@/lib/research-issues";
 import { listPublishedIssues } from "@/lib/server/repository";
 
 export const metadata = { title: "Research" };
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export default async function ResearchPage() {
   const issues = await listPublishedIssues();

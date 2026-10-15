@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { verifyRadarRequest } from "@/lib/server/radar-signature";
 import { ingestIssue } from "@/lib/server/repository";
@@ -36,6 +37,11 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ error: "Invalid issue", details: parsed.error.flatten() }, { status: 400 });
   try {
     const result = await ingestIssue(parsed.data, body);
+    if (result.inserted || ("replaced" in result && result.replaced)) {
+      revalidateTag("research-issues", { expire: 0 });
+      revalidatePath("/research");
+      revalidatePath("/research/[date]", "page");
+    }
     return NextResponse.json(result, { status: result.inserted ? 201 : 200 });
   } catch (error) {
     const conflict = error instanceof Error && error.message === "DIGEST_CONFLICT";

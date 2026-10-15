@@ -7,8 +7,19 @@ const scoreLabels = {
   novelty: "新颖性",
   mechanisticDepth: "机理深度",
   evidenceRigor: "证据严谨性",
-  reproducibility: "复现与迁移"
+  reproducibility: "复现与迁移价值"
 } as const;
+
+function scoreLine(paper: ResearchIssue["papers"][number]) {
+  if (!paper.score) return "";
+  const dimensions = Object.entries(scoreLabels).flatMap(([key, label]) => {
+    const value = paper.score?.dimensions[key as keyof typeof paper.score.dimensions];
+    return value === undefined ? [] : [`${label} ${value.toFixed(1)}`];
+  });
+  const watch = paper.score.watchlistAdjustment ?? 0;
+  const suffix = watch ? `；关注名单 +${watch.toFixed(2)}` : "";
+  return `总分 ${paper.score.total.toFixed(2)}/10（${dimensions.join(" · ")}${suffix}）`;
+}
 
 function issueTitle(date: string) {
   return `Weekly Research Brief · ${date}`;
@@ -42,7 +53,7 @@ export function ResearchArchive({ issues, selectedIssue }: { issues: ResearchIss
             <div className="issue-year" key={year}>
               <div className="issue-year-label">{year}</div>
               {entries.filter((entry) => entry.issue.date.startsWith(year)).map((entry) => (
-                <Link className={`issue-list-link ${entry.issue.id === selectedIssue.id ? "active" : ""}`} href={`/research/${entry.slug}`} key={entry.issue.id} aria-current={entry.issue.id === selectedIssue.id ? "page" : undefined}>
+                <Link prefetch={false} className={`issue-list-link ${entry.issue.id === selectedIssue.id ? "active" : ""}`} href={`/research/${entry.slug}`} key={entry.issue.id} aria-current={entry.issue.id === selectedIssue.id ? "page" : undefined}>
                   <strong><span aria-hidden="true" />{entry.label}</strong>
                   <span>{issueTitle(entry.issue.date)}</span>
                   <small>{String(entry.issue.papers.length).padStart(2, "0")} PAPERS</small>
@@ -62,55 +73,37 @@ export function ResearchArchive({ issues, selectedIssue }: { issues: ResearchIss
             </div>
           </header>
 
-          <section className="weekly-synthesis">
-            <div className="meta">THIS WEEK</div>
-            <p>{selectedIssue.synthesis}</p>
-            {selectedIssue.trackDistribution?.length ? <div className="track-distribution">{selectedIssue.trackDistribution.map((item) => <span key={item.label}><strong>{String(item.count).padStart(2, "0")}</strong>{item.label}</span>)}</div> : null}
-          </section>
-
-          {selectedIssue.warnings?.length ? <aside className="research-warning"><span className="meta">SOURCE NOTICE</span><p>{selectedIssue.warnings.join("；")}</p></aside> : null}
+          {selectedIssue.warnings?.length ? <aside className="research-warning"><p>⚠️ {selectedIssue.warnings.join("；")}</p></aside> : null}
+          {selectedIssue.trackDistribution?.length ? <div className="research-email-summary"><strong>本期赛道分布：</strong>{selectedIssue.trackDistribution.map((item) => `${item.label} ${item.count}`).join(" · ")}</div> : null}
 
           <div className="research-paper-list">
             {selectedIssue.papers.map((paper, index) => (
               <article className="research-paper" id={paper.id} key={paper.id}>
                 <header>
                   <div className="paper-badges">
-                    <span className="paper-index">{String(index + 1).padStart(2, "0")}</span>
                     {paper.track ? <span className="paper-badge track">{paper.track}</span> : null}
                     {paper.publicationStatus ? <span className={`paper-badge ${paper.publicationStatus.includes("预印本") ? "preprint" : "journal"}`}>{paper.publicationStatus}</span> : null}
                   </div>
-                  <h3>{paper.title}</h3>
-                  <p className="paper-authors">{paper.authors}</p>
-                  <dl className="paper-metadata">
-                    {paper.institutions?.length ? <div><dt>发布机构</dt><dd>{paper.institutions.join(" · ")}</dd></div> : null}
-                    <div><dt>期刊 / 平台</dt><dd>{paper.venue}</dd></div>
-                    <div><dt>发布日期</dt><dd>{paper.publishedAt || "未提供"}</dd></div>
-                    <div><dt>来源</dt><dd>{paper.sources?.join(", ") || "未提供"}</dd></div>
-                  </dl>
-                  <div className="tag-list">{paper.topics.filter((topic) => topic !== paper.track).map((topic) => <span className="tag" key={topic}>{topic}</span>)}</div>
+                  <h3>{index + 1}. <a href={paper.url} target="_blank" rel="noreferrer">{paper.title}</a></h3>
+                  <p className="paper-authors">{paper.authors} · {paper.venue}</p>
+                  <div className="paper-institutions"><strong>发布机构：</strong><span>{(paper.institutions?.length ? paper.institutions : ["来源元数据未提供"]).map((institution) => <span className="institution-tag" key={institution}>{institution}</span>)}</span></div>
+                  <p className="paper-source"><strong>DOI：</strong>{paper.doi === "未提供" ? "未提供" : <a href={`https://doi.org/${paper.doi}`} target="_blank" rel="noreferrer">{paper.doi}</a>}　<strong>来源：</strong>{paper.sources?.join(", ") || "未提供"}</p>
                 </header>
-                {paper.score ? <section className="paper-score-panel">
-                  <div className="paper-score-total"><span className="meta">RADAR SCORE</span><strong>{paper.score.total.toFixed(2)}</strong><small>/ 10</small></div>
-                  <div className="paper-score-dimensions">{Object.entries(scoreLabels).map(([key, label]) => {
-                    const value = paper.score?.dimensions[key as keyof typeof paper.score.dimensions];
-                    return value === undefined ? null : <div key={key}><span>{label}</span><strong>{value.toFixed(1)}</strong></div>;
-                  })}</div>
-                  <p><span className="meta">入选机制</span>{paper.selectionReason}</p>
-                </section> : null}
+                {paper.score ? <p className="paper-score">{scoreLine(paper)}</p> : null}
+                <p className="paper-selection">入选机制：{paper.selectionReason || "综合评分"}</p>
                 <dl className="paper-review">
                   <div><dt>核心问题</dt><dd>{paper.coreProblem}</dd></div>
-                  <div><dt>催化 / 化学策略</dt><dd>{paper.strategy}</dd></div>
+                  <div><dt>催化/化学策略</dt><dd>{paper.strategy}</dd></div>
                   <div><dt>关键创新</dt><dd>{paper.innovation}</dd></div>
                   <div><dt>证据评价</dt><dd>{paper.evidence}</dd></div>
                   {paper.researchRelevance ? <div className="paper-relevance"><dt>与 Zhaoyang 研究的关联</dt><dd>{paper.researchRelevance}</dd></div> : null}
                   <div><dt>不确定性</dt><dd>{paper.uncertainty}</dd></div>
                 </dl>
-                <section className="paper-abstract"><div className="meta">中文摘要 · AI TRANSLATION</div><p lang="zh-CN">{paper.abstractZh ?? paper.summary}</p></section>
-                <footer><a className="text-link" href={paper.url} target="_blank" rel="noreferrer">Open original source ↗</a><span className="meta">DOI · {paper.doi}</span></footer>
+                <section className="paper-abstract"><strong>中文摘要</strong><p lang="zh-CN">{paper.abstractZh ?? paper.summary}</p></section>
               </article>
             ))}
           </div>
-          <p className="mono muted research-disclaimer">SOURCE LINKS PRESERVED · NO BELOW-THRESHOLD PADDING · VERIFY PRIMARY SOURCES BEFORE RELYING ON A CLAIM</p>
+          <p className="research-disclaimer">评分用于建立阅读队列，不替代阅读原文。</p>
         </article>
       </section>
     </>
