@@ -1,3 +1,4 @@
+import { CanvasFactory } from "pdf-parse/worker";
 import { PDFParse } from "pdf-parse";
 
 const MAX_TEXT_CHARACTERS = 120_000;
@@ -43,7 +44,7 @@ function boundedText(text: string) {
 
 export async function extractPaper(file: File): Promise<ExtractedPaper> {
   const bytes = new Uint8Array(await file.arrayBuffer());
-  const parser = new PDFParse({ data: bytes });
+  const parser = new PDFParse({ data: bytes, CanvasFactory });
   try {
     const [content, info] = await Promise.all([
       parser.getText(),
