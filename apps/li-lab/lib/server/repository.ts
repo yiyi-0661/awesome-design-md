@@ -7,6 +7,14 @@ import type { ResearchIssue, UpdateSettings } from "../types";
 
 type IssueEnvelope = ResearchIssue & { runId?: string; digestHash?: string };
 
+function listLocalPublishedIssues() {
+  const localIssues = loadLocalRadarIssues();
+  if (!localIssues.length) return demoStore.listIssues();
+  const byDate = new Map(demoStore.listIssues().map((issue) => [issue.date, issue]));
+  for (const issue of localIssues) byDate.set(issue.date, issue);
+  return Array.from(byDate.values()).sort((a, b) => b.date.localeCompare(a.date));
+}
+
 function settingsFromRow(row: Record<string, unknown>): UpdateSettings {
   return {
     topics: row.topics as string[],
@@ -48,17 +56,16 @@ export async function updatePreferences(next: Omit<UpdateSettings, "updatedAt">,
 }
 
 export async function listPublishedIssues() {
-  if (!hasSupabaseServiceConfig()) {
-    const localIssues = loadLocalRadarIssues();
-    if (!localIssues.length) return demoStore.listIssues();
-    const byDate = new Map(demoStore.listIssues().map((issue) => [issue.date, issue]));
-    for (const issue of localIssues) byDate.set(issue.date, issue);
-    return Array.from(byDate.values()).sort((a, b) => b.date.localeCompare(a.date));
-  }
+  if (!hasSupabaseServiceConfig()) return listLocalPublishedIssues();
   const client = createSupabaseServiceClient();
   const { data, error } = await client.from("research_issues").select("canonical_payload").not("published_at", "is", null).order("published_at", { ascending: false });
-  if (error) throw error;
-  return data.map((row) => row.canonical_payload as ResearchIssue);
+  if (error) {
+    console.warn("Supabase research archive unavailable; using the bundled archive.", error.message);
+    return listLocalPublishedIssues();
+  }
+  const cloudIssues = data.map((row) => row.canonical_payload as ResearchIssue);
+  if (!cloudIssues.length) return listLocalPublishedIssues();
+  return cloudIssues;
 }
 
 export async function getPublishedIssue(identifier: string) {
