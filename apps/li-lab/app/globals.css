@@ -313,6 +313,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .auth-panel h1 { color: var(--blue); font: 400 clamp(52px, 6vw, 78px)/.98 "Newsreader", serif; letter-spacing: -.025em; margin: 0; }
 .auth-panel .stack > p { font-family: var(--font-subtitle); font-size: 18px; font-weight: 300; line-height: 1.65; margin: 0; max-width: 680px; }
 .auth-actions { align-items: start; display: grid; gap: 20px; justify-items: start; }
+.auth-session { border: 1px solid var(--line); display: grid; gap: 16px; max-width: 680px; padding: 22px; }
+.auth-session p { margin: 0; }
+.auth-session-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 12px; }
+.auth-session-actions form { margin: 0; }
 .auth-message { border-left: 2px solid var(--green); margin: 0; padding: 10px 14px; }
 .auth-message.error { border-color: var(--error); color: var(--error); }
 .auth-setup { border: 1px solid var(--line); display: grid; gap: 12px; max-width: 640px; padding: 20px; }

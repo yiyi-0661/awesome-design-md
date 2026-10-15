@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { safeNextPath } from "@/lib/auth";
 import { currentOwner, hasSupabaseConfig } from "@/lib/server/supabase";
 
@@ -19,7 +18,7 @@ export default async function LoginPage({
   const params = await searchParams;
   const next = safeNextPath(params.next);
   const owner = await currentOwner();
-  if (owner && owner.id !== "demo-owner") redirect(next);
+  const signedInOwner = owner && owner.id !== "demo-owner" ? owner : null;
   const configured = hasSupabaseConfig();
   const message = params.error ? errors[params.error] ?? "Sign-in failed." : params.signedOut ? "You have signed out safely." : "";
 
@@ -33,7 +32,18 @@ export default async function LoginPage({
         </div>
         <div className="auth-actions">
           {message ? <p className={params.signedOut ? "auth-message" : "auth-message error"} role="status">{message}</p> : null}
-          {configured ? (
+          {signedInOwner ? (
+            <div className="auth-session">
+              <div className="meta">OWNER SESSION ACTIVE</div>
+              <p>Signed in as <strong>@{signedInOwner.githubLogin}</strong>. Private Analysis, Updates, and Methods drafts are available.</p>
+              <div className="auth-session-actions">
+                <Link className="button primary" href={next}>Open private workspace →</Link>
+                <form action="/auth/signout" method="post">
+                  <button className="button ghost" type="submit">Sign out</button>
+                </form>
+              </div>
+            </div>
+          ) : configured ? (
             <a className="button primary" href={`/auth/github?next=${encodeURIComponent(next)}`}>Continue with GitHub →</a>
           ) : (
             <div className="auth-setup">
@@ -46,8 +56,8 @@ export default async function LoginPage({
         </div>
       </section>
       <aside className="auth-note">
-        <div className="meta">OWNER-ONLY REGISTRATION</div>
-        <p>The first successful login creates the private member record automatically. Public account registration is disabled.</p>
+        <div className="meta">{signedInOwner ? "OWNER-ONLY WORKSPACE" : "OWNER-ONLY REGISTRATION"}</div>
+        <p>{signedInOwner ? "This session belongs to the authorized GitHub owner. Signing out leaves all public research pages available." : "The first successful login creates the private member record automatically. Public account registration is disabled."}</p>
       </aside>
     </main>
   );
