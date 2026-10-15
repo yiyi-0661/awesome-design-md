@@ -114,6 +114,86 @@ function labelDate(date: string) {
   return new Intl.DateTimeFormat("en-SG", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`)).toUpperCase();
 }
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function markdownField(block: string, label: string) {
+  return block.match(new RegExp(`^- \\*\\*${escapeRegExp(label)}\\*\\*：(.*)$`, "m"))?.[1]?.trim() ?? "";
+}
+
+function scoreFromMarkdown(value: string): Paper["score"] | undefined {
+  const total = value.match(/^总分 ([\d.]+)\/10/)?.[1];
+  if (!total) return undefined;
+  const dimension = (label: string) => {
+    const match = value.match(new RegExp(`${escapeRegExp(label)} ([\\d.]+)`));
+    return match ? Number(match[1]) : undefined;
+  };
+  const watchlistAdjustment = value.match(/关注名单 \+([\d.]+)/)?.[1];
+  return {
+    total: Number(total),
+    watchlistAdjustment: watchlistAdjustment ? Number(watchlistAdjustment) : 0,
+    dimensions: {
+      relevance: dimension("相关性"),
+      novelty: dimension("新颖性"),
+      mechanisticDepth: dimension("机理深度"),
+      evidenceRigor: dimension("证据严谨性"),
+      reproducibility: dimension("复现与迁移价值")
+    }
+  };
+}
+
+export function issueFromRadarMarkdown(run: RadarRun, markdown: string): ResearchIssue {
+  const warnings = markdown.match(/^> ⚠️ (.*)$/m)?.[1]?.split("；").filter(Boolean) ?? [];
+  const distributionLine = markdown.match(/^> \*\*本期赛道分布\*\*：(.*)$/m)?.[1] ?? "";
+  const trackDistribution = Object.values(TRACK_LABELS).map((label) => ({
+    label,
+    count: Number(distributionLine.match(new RegExp(`${escapeRegExp(label)} (\\d+)`))?.[1] ?? 0)
+  }));
+  const paperPattern = /^## \d+\. \[([^\]]+)\]\(([^\n]+)\)\n\n([\s\S]*?)(?=^## \d+\.|^---$)/gm;
+  const papers = Array.from(markdown.matchAll(paperPattern), (match): Paper => {
+    const [, title, url, block] = match;
+    const doi = markdownField(block, "DOI") || "未提供";
+    const abstractZh = markdownField(block, "中文摘要") || "中文摘要暂不可用。";
+    const track = markdownField(block, "赛道") || "未分类";
+    return {
+      id: doi === "未提供" ? url : `doi:${doi}`,
+      title,
+      authors: markdownField(block, "作者") || "未知作者",
+      venue: markdownField(block, "期刊/平台") || "未知期刊/平台",
+      publishedAt: "",
+      topics: [track],
+      summary: abstractZh,
+      coreProblem: markdownField(block, "核心问题"),
+      strategy: markdownField(block, "催化/化学策略"),
+      innovation: markdownField(block, "关键创新"),
+      evidence: markdownField(block, "证据评价"),
+      uncertainty: markdownField(block, "不确定性"),
+      doi,
+      url,
+      track,
+      publicationStatus: markdownField(block, "论文状态"),
+      institutions: (markdownField(block, "发布机构") || "来源元数据未提供").split("、"),
+      sources: markdownField(block, "来源").split(", ").filter(Boolean),
+      selectionReason: markdownField(block, "入选机制") || "综合评分",
+      researchRelevance: markdownField(block, "与 Zhaoyang 研究的关联"),
+      abstractZh,
+      score: scoreFromMarkdown(markdownField(block, "评分"))
+    };
+  });
+  return {
+    id: run.run_id,
+    date: run.report_date,
+    dateRange: labelDate(run.report_date),
+    title: `Weekly Research Brief · ${run.report_date}`,
+    synthesis: distributionLine,
+    generatedAt: run.finished_at,
+    warnings,
+    trackDistribution,
+    papers
+  };
+}
+
 export function issueFromRadarRun(run: RadarRun, records: Iterable<RadarRecord>, reportUrls: string[] = []): ResearchIssue {
   const candidates = Array.from(records);
   const byUrl = new Map(candidates.map((record) => [record.url, record]));
@@ -158,10 +238,8 @@ export function loadLocalRadarIssues(): ResearchIssue[] {
     const records = latestRecords(path.join(root, "data"));
     return Array.from(latestRunByDate.values()).map((run) => {
       const reportPath = path.join(root, "reports", "weekly", `${run.report_date}.md`);
-      const reportUrls = existsSync(reportPath)
-        ? Array.from(readFileSync(reportPath, "utf8").matchAll(/^## \d+\. \[[^\]]+\]\(([^)]+)\)$/gm), (match) => match[1])
-        : [];
-      return issueFromRadarRun(run, records.values(), reportUrls);
+      if (existsSync(reportPath)) return issueFromRadarMarkdown(run, readFileSync(reportPath, "utf8"));
+      return issueFromRadarRun(run, records.values());
     }).filter((issue) => issue.papers.length > 0);
   } catch (error) {
     console.warn("Unable to load local chem-research-radar reports", error);
