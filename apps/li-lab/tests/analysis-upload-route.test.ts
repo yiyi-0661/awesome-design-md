@@ -13,7 +13,7 @@ describe("Analysis upload initialization", () => {
     cleanupExpiredAnalysisJobs.mockReset();
     cleanupExpiredAnalysisJobs.mockResolvedValue({ deleted: 0, resultsCleared: 0 });
     initializeAnalysisUpload.mockReset();
-    initializeAnalysisUpload.mockResolvedValue({ jobId: "job-1", uploadToken: "signed", path: "owner-1/job-1.pdf" });
+    initializeAnalysisUpload.mockResolvedValue({ jobId: "job-1", path: "owner-1/job-1.pdf" });
   });
 
   it("accepts a 6.2 MiB PDF without sending its bytes through the route", async () => {

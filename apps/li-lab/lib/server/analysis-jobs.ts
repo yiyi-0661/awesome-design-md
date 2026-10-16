@@ -86,12 +86,7 @@ export async function initializeAnalysisUpload(ownerId: string, input: { fileNam
   });
   if (insertError) throw new Error(`JOB_CREATE_FAILED:${insertError.message}`);
 
-  const { data, error } = await client.storage.from(ANALYSIS_BUCKET).createSignedUploadUrl(objectPath, { upsert: false });
-  if (error || !data?.token) {
-    await client.from("analysis_jobs").delete().eq("id", jobId).eq("owner_id", ownerId);
-    throw new Error(`UPLOAD_TOKEN_FAILED:${error?.message ?? "missing token"}`);
-  }
-  return { jobId, bucket: ANALYSIS_BUCKET, path: objectPath, uploadToken: data.token, expiresAt, chunkSize: ANALYSIS_TUS_CHUNK_SIZE };
+  return { jobId, bucket: ANALYSIS_BUCKET, path: objectPath, expiresAt, chunkSize: ANALYSIS_TUS_CHUNK_SIZE };
 }
 
 export async function confirmAnalysisUpload(ownerId: string, jobId: string) {

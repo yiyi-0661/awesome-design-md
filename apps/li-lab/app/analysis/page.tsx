@@ -6,6 +6,7 @@ import { Upload } from "tus-js-client";
 import { PageHeader } from "@/components/page-header";
 import { ModePill, useWorkspace } from "@/components/workspace-store";
 import { apiErrorMessage, readApiResponse } from "@/lib/api-response";
+import { getSupabaseBrowserClient, supabaseBrowserPublicKey } from "@/lib/supabase-browser";
 import type { AnalysisJobSnapshot, AnalysisResult, AnalysisStatus, MethodArticle } from "@/lib/types";
 import { isTextPdf } from "@/lib/validation";
 
@@ -29,7 +30,6 @@ type UploadSession = {
   jobId: string;
   bucket: string;
   path: string;
-  uploadToken: string;
   expiresAt: string;
   chunkSize: number;
 };
@@ -112,13 +112,16 @@ export default function AnalysisPage() {
     if (activeJobId.current) void fetch(`/api/analysis/jobs/${activeJobId.current}`, { method: "DELETE", keepalive: true });
   }, []);
 
-  function uploadWithTus(file: File, session: UploadSession, settings: AnalysisConfig) {
+  async function uploadWithTus(file: File, session: UploadSession, settings: AnalysisConfig) {
+    if (!settings.supabaseUrl) throw new Error("Private storage is not configured.");
+    const endpoint = storageTusEndpoint(settings.supabaseUrl);
+    const { data: { session: authSession }, error: authError } = await getSupabaseBrowserClient().auth.getSession();
+    if (authError || !authSession?.access_token) throw new Error("Your private session expired. Sign in again.");
     return new Promise<void>((resolve, reject) => {
-      if (!settings.supabaseUrl) { reject(new Error("Private storage is not configured.")); return; }
       const upload = new Upload(file, {
-        endpoint: storageTusEndpoint(settings.supabaseUrl),
+        endpoint,
         retryDelays: [0, 3000, 5000, 10000, 20000],
-        headers: { "x-signature": session.uploadToken, "x-upsert": "false" },
+        headers: { authorization: `Bearer ${authSession.access_token}`, apikey: supabaseBrowserPublicKey(), "x-upsert": "false" },
         uploadDataDuringCreation: true,
         removeFingerprintOnSuccess: true,
         chunkSize: session.chunkSize,
