@@ -69,6 +69,10 @@ export type UpdateSettings = {
 
 export type AnalysisStatus =
   | "idle"
+  | "validating"
+  | "preparing"
+  | "uploading"
+  | "uploaded"
   | "queued"
   | "extracting"
   | "tracing"
@@ -76,6 +80,17 @@ export type AnalysisStatus =
   | "reviewing"
   | "complete"
   | "failed";
+
+export type AnalysisJobState = Exclude<AnalysisStatus, "idle" | "validating" | "preparing"> | "expired" | "cancelled";
+
+export type AnalysisJobSnapshot = {
+  jobId: string;
+  status: AnalysisJobState;
+  stage: number;
+  updatedAt: string;
+  result: AnalysisResult | null;
+  errorCode?: string | null;
+};
 
 export type AnalysisResult = {
   id: string;

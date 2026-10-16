@@ -236,6 +236,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .dropzone:hover, .dropzone.dragging { background: var(--blue-soft); }
 .dropzone h2 { font: 400 25px/1.15 "Newsreader", serif; margin: 6px 0 0; overflow-wrap: anywhere; }
 .dropzone input { height: 1px; opacity: 0; position: absolute; width: 1px; }
+.upload-meter { background: var(--line); display: block; height: 2px; overflow: hidden; width: 100%; }
+.upload-meter > span { background: var(--blue); display: block; height: 100%; transition: width 160ms linear; }
 .progress-list { display: grid; gap: 0; }
 .progress-step { border-top: 1px solid var(--line); color: var(--muted); display: flex; font: 500 10px "IBM Plex Mono", monospace; justify-content: space-between; padding: 8px 0; text-transform: uppercase; }
 .progress-step.active { color: var(--blue); }

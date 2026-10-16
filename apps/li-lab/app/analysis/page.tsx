@@ -2,9 +2,11 @@
 
 import { ChangeEvent, DragEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { Upload } from "tus-js-client";
 import { PageHeader } from "@/components/page-header";
 import { ModePill, useWorkspace } from "@/components/workspace-store";
-import type { AnalysisResult, AnalysisStatus, MethodArticle } from "@/lib/types";
+import { apiErrorMessage, readApiResponse } from "@/lib/api-response";
+import type { AnalysisJobSnapshot, AnalysisResult, AnalysisStatus, MethodArticle } from "@/lib/types";
 import { isTextPdf } from "@/lib/validation";
 
 const stages: Array<{ status: AnalysisStatus; label: string }> = [
@@ -13,6 +15,36 @@ const stages: Array<{ status: AnalysisStatus; label: string }> = [
   { status: "analyzing", label: "Analyzing core method" },
   { status: "reviewing", label: "Reviewing evidence" }
 ];
+
+type AnalysisConfig = {
+  configured: boolean;
+  maxFileBytes: number;
+  uploadMode: "supabase-tus" | "direct-form";
+  supabaseUrl?: string;
+  bucket?: string;
+  chunkSize: number;
+};
+
+type UploadSession = {
+  jobId: string;
+  bucket: string;
+  path: string;
+  uploadToken: string;
+  expiresAt: string;
+  chunkSize: number;
+};
+
+const storedJobKey = "li-lab-analysis-job";
+
+function storageTusEndpoint(supabaseUrl: string) {
+  const url = new URL(supabaseUrl);
+  const projectId = url.hostname.split(".")[0];
+  return `https://${projectId}.storage.supabase.co/storage/v1/upload/resumable`;
+}
+
+function megabytes(bytes: number) {
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
 
 export default function AnalysisPage() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -24,39 +56,167 @@ export default function AnalysisPage() {
   const [dragging, setDragging] = useState(false);
   const [draftId, setDraftId] = useState("");
   const [configured, setConfigured] = useState<boolean | null>(null);
+  const [config, setConfig] = useState<AnalysisConfig | null>(null);
+  const [fileSize, setFileSize] = useState(0);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const activeUpload = useRef<Upload | null>(null);
+  const activeJobId = useRef("");
+  const uploadInProgress = useRef(false);
 
   useEffect(() => {
     void fetch("/api/analysis/jobs", { cache: "no-store" })
-      .then(async (response) => response.ok ? response.json() as Promise<{ configured: boolean }> : Promise.reject(new Error("Status unavailable")))
-      .then((payload) => setConfigured(payload.configured))
+      .then(async (response) => {
+        const payload = await readApiResponse<AnalysisConfig>(response);
+        if (!response.ok || !("configured" in payload)) throw new Error(apiErrorMessage(payload, "Status unavailable"));
+        return payload;
+      })
+      .then((payload) => { setConfigured(payload.configured); setConfig(payload); })
       .catch(() => setConfigured(false));
   }, []);
+
+  useEffect(() => {
+    const jobId = window.localStorage.getItem(storedJobKey);
+    if (!jobId) return;
+    activeJobId.current = jobId;
+    let stopped = false;
+    let timer = 0;
+    const poll = async () => {
+      const response = await fetch(`/api/analysis/jobs/${jobId}`, { cache: "no-store" });
+      const payload = await readApiResponse<AnalysisJobSnapshot>(response);
+      if (stopped) return;
+      if (!response.ok || !("status" in payload)) {
+        if (response.status === 404 || response.status === 410) window.localStorage.removeItem(storedJobKey);
+        return;
+      }
+      if (["complete", "failed", "expired", "cancelled"].includes(payload.status)) {
+        window.clearInterval(timer);
+        if (payload.status === "complete" && payload.result) {
+          setResult(payload.result); setFileName(payload.result.fileName); setStatus("complete");
+          setMessage("Analysis restored · the PDF was removed from private storage");
+        } else if (payload.status !== "complete") {
+          setStatus("failed"); setMessage("The previous analysis could not be completed. The uploaded PDF was removed.");
+        }
+      } else {
+        setStatus(payload.status === "uploaded" ? "queued" : payload.status as AnalysisStatus);
+        setMessage("Private analysis in progress · you can safely keep this page open");
+      }
+    };
+    void poll();
+    timer = window.setInterval(() => void poll(), 1800);
+    return () => { stopped = true; window.clearInterval(timer); };
+  }, []);
+
+  useEffect(() => () => {
+    if (!uploadInProgress.current) return;
+    void activeUpload.current?.abort();
+    if (activeJobId.current) void fetch(`/api/analysis/jobs/${activeJobId.current}`, { method: "DELETE", keepalive: true });
+  }, []);
+
+  function uploadWithTus(file: File, session: UploadSession, settings: AnalysisConfig) {
+    return new Promise<void>((resolve, reject) => {
+      if (!settings.supabaseUrl) { reject(new Error("Private storage is not configured.")); return; }
+      const upload = new Upload(file, {
+        endpoint: storageTusEndpoint(settings.supabaseUrl),
+        retryDelays: [0, 3000, 5000, 10000, 20000],
+        headers: { "x-signature": session.uploadToken, "x-upsert": "false" },
+        uploadDataDuringCreation: true,
+        removeFingerprintOnSuccess: true,
+        chunkSize: session.chunkSize,
+        metadata: {
+          bucketName: session.bucket,
+          objectName: session.path,
+          contentType: "application/pdf",
+          cacheControl: "0"
+        },
+        onProgress: (uploaded, total) => {
+          const percentage = total ? Math.round((uploaded / total) * 100) : 0;
+          setUploadProgress(percentage);
+          setMessage(`Uploading directly to private storage · ${percentage}%`);
+        },
+        onError: reject,
+        onSuccess: () => resolve()
+      });
+      activeUpload.current = upload;
+      void upload.findPreviousUploads().then((previous) => {
+        if (previous[0]) upload.resumeFromPreviousUpload(previous[0]);
+        upload.start();
+      }).catch(reject);
+    });
+  }
+
+  async function analyzeLegacy(file: File) {
+    const form = new FormData();
+    form.set("paper", file);
+    form.set("externalProcessingConsent", "true");
+    const response = await fetch("/api/analysis/jobs", { method: "POST", body: form });
+    const payload = await readApiResponse<{ result?: AnalysisResult; error?: string }>(response);
+    if (!response.ok || !("result" in payload) || !payload.result) throw new Error(apiErrorMessage(payload, "Analysis failed"));
+    return payload.result;
+  }
 
   async function analyze(file: File) {
     if (!isTextPdf(file)) { setStatus("failed"); setMessage("Choose a valid PDF smaller than 30 MB."); return; }
     if (configured === false) { setStatus("failed"); setMessage("DeepSeek is not configured. Add LLM_API_KEY to .env.local, then restart the server."); return; }
-    setFileName(file.name); setResult(null); setStatus("queued"); setMessage("Uploading securely · the PDF remains in request memory only");
-    let stageIndex = 0;
-    setStatus(stages[stageIndex].status);
-    const progress = window.setInterval(() => {
-      stageIndex = Math.min(stageIndex + 1, stages.length - 1);
-      setStatus(stages[stageIndex].status);
-    }, 2800);
+    if (!config) { setStatus("failed"); setMessage("Analysis setup is still loading. Please retry."); return; }
+    setFileName(file.name); setFileSize(file.size); setUploadProgress(0); setResult(null); setStatus("validating"); setMessage("Validating PDF");
+    let pollTimer = 0;
+    let analysisRequestStarted = false;
     try {
-      const form = new FormData();
-      form.set("paper", file);
-      form.set("externalProcessingConsent", "true");
-      const response = await fetch("/api/analysis/jobs", { method: "POST", body: form });
-      const payload = await response.json() as { result?: AnalysisResult; error?: string };
-      if (!response.ok || !payload.result) throw new Error(payload.error ?? "Analysis failed");
+      if (config.uploadMode === "direct-form") {
+        setStatus("extracting"); setMessage("Uploading through the local development server");
+        const legacyResult = await analyzeLegacy(file);
+        setResult(legacyResult); setStatus("complete"); setMessage("Analysis complete · the PDF was not retained by the server");
+        return;
+      }
+
+      setStatus("preparing"); setMessage("Preparing a private upload");
+      const initResponse = await fetch("/api/analysis/uploads", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ fileName: file.name, size: file.size, contentType: "application/pdf" })
+      });
+      const session = await readApiResponse<UploadSession>(initResponse);
+      if (!initResponse.ok || !("jobId" in session)) throw new Error(apiErrorMessage(session, "The upload could not be prepared."));
+      activeJobId.current = session.jobId;
+      window.localStorage.setItem(storedJobKey, session.jobId);
+      uploadInProgress.current = true;
+      setStatus("uploading");
+      await uploadWithTus(file, session, config);
+      uploadInProgress.current = false;
+      activeUpload.current = null;
+      setStatus("uploaded"); setUploadProgress(100); setMessage("Upload complete · beginning private analysis");
+
+      const confirmResponse = await fetch(`/api/analysis/uploads/${session.jobId}/complete`, { method: "POST" });
+      const confirmation = await readApiResponse<{ status: string }>(confirmResponse);
+      if (!confirmResponse.ok) throw new Error(apiErrorMessage(confirmation, "The upload could not be verified."));
+
+      pollTimer = window.setInterval(() => {
+        void fetch(`/api/analysis/jobs/${session.jobId}`, { cache: "no-store" }).then(async (response) => {
+          const update = await readApiResponse<AnalysisJobSnapshot>(response);
+          if (response.ok && "status" in update && ["extracting", "tracing", "analyzing", "reviewing"].includes(update.status)) setStatus(update.status as AnalysisStatus);
+        });
+      }, 1200);
+      setStatus("extracting"); setMessage("Reading paper from private storage");
+      analysisRequestStarted = true;
+      const response = await fetch("/api/analysis/jobs", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jobId: session.jobId })
+      });
+      const payload = await readApiResponse<{ result?: AnalysisResult; error?: string }>(response);
+      if (!response.ok || !("result" in payload) || !payload.result) throw new Error(apiErrorMessage(payload, "Analysis failed"));
       setResult(payload.result);
       setStatus("complete");
-      setMessage("Analysis complete · the PDF was not retained by the server");
+      setMessage("Analysis complete · the PDF was removed from private storage");
     } catch (error) {
+      uploadInProgress.current = false;
+      void activeUpload.current?.abort();
+      activeUpload.current = null;
       setStatus("failed");
-      setMessage(error instanceof Error ? error.message : "The paper could not be analyzed.");
+      setMessage(`${error instanceof Error ? error.message : "The paper could not be analyzed."} The uploaded PDF has been removed.`);
+      if (!analysisRequestStarted && activeJobId.current) void fetch(`/api/analysis/jobs/${activeJobId.current}`, { method: "DELETE" });
     } finally {
-      window.clearInterval(progress);
+      window.clearInterval(pollTimer);
     }
   }
 
@@ -80,11 +240,11 @@ export default function AnalysisPage() {
           <div className="stack analysis-mode-row"><ModePill /><span className={`mode-pill ${configured ? "ready" : ""}`}>{configured === null ? "CHECKING ANALYSIS API" : configured ? "DEEPSEEK READY" : "SETUP REQUIRED"}</span></div>
           <label className={`dropzone ${dragging ? "dragging" : ""}`} onDragOver={(event) => { event.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={drop}>
             <input ref={inputRef} type="file" accept="application/pdf,.pdf" onChange={choose} />
-            <span><span className="meta">UPLOAD PAPER · PDF</span><h2>{fileName || "Drop a paper here to begin"}</h2></span>
-            <span className="stack"><span>{message}</span><span className="text-link">Browse files →</span></span>
+            <span><span className="meta">UPLOAD PAPER · PDF</span><h2>{fileName || "Drop a paper here to begin"}</h2>{fileSize ? <small className="meta">{megabytes(fileSize)}</small> : null}</span>
+            <span className="stack"><span>{message}</span>{status === "uploading" ? <span className="upload-meter" aria-label={`Upload ${uploadProgress}%`}><span style={{ width: `${uploadProgress}%` }} /></span> : null}<span className="text-link">Browse files →</span></span>
           </label>
           <div className="progress-list">
-            {stages.map((stage, index) => <div className={`progress-step ${status === "complete" || index <= currentIndex ? "active" : ""}`} key={stage.status}><span>{String(index + 1).padStart(2, "0")} · {stage.label}</span><span>{status === "complete" || index < currentIndex ? "✓" : index === currentIndex ? "●" : "○"}</span></div>)}
+            {stages.map((stage, index) => <div className={`progress-step ${status === "complete" || (currentIndex >= 0 && index <= currentIndex) ? "active" : ""}`} key={stage.status}><span>{String(index + 1).padStart(2, "0")} · {stage.label}</span><span>{status === "complete" || (currentIndex >= 0 && index < currentIndex) ? "✓" : index === currentIndex ? "●" : "○"}</span></div>)}
           </div>
           {status === "failed" ? <button className="button ghost" onClick={() => inputRef.current?.click()}>Try another PDF →</button> : null}
           {result ? <button className="button primary" onClick={createDraft}>Create Methods draft →</button> : null}

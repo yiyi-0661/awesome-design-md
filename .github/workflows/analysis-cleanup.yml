@@ -1,0 +1,27 @@
+name: Clean up temporary Analysis uploads
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: analysis-upload-cleanup
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Remove expired private PDFs and results
+        env:
+          CLEANUP_SECRET: ${{ secrets.ANALYSIS_CLEANUP_SECRET }}
+        run: |
+          curl --fail-with-body --retry 3 --retry-all-errors \
+            --request POST \
+            --header "Authorization: Bearer ${CLEANUP_SECRET}" \
+            https://li-lab.vercel.app/api/internal/analysis/cleanup

@@ -28,6 +28,16 @@ export const methodArticleSchema = z.object({
   version: z.number().int().positive()
 });
 
+export const analysisUploadSchema = z.object({
+  fileName: z.string().trim().min(1).max(255),
+  size: z.number().int().min(1).max(30 * 1024 * 1024),
+  contentType: z.literal("application/pdf")
+});
+
+export const analysisStartSchema = z.object({
+  jobId: z.string().uuid()
+});
+
 export function normalizeTopic(value: string) {
   return value.trim().replace(/\s+/g, " ");
 }
@@ -35,6 +45,11 @@ export function normalizeTopic(value: string) {
 export function isTextPdf(file: Pick<File, "name" | "type" | "size">) {
   const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
   return isPdf && file.size > 0 && file.size <= 30 * 1024 * 1024;
+}
+
+export function safeDisplayFileName(value: string) {
+  const leaf = value.replace(/\\/g, "/").split("/").at(-1) ?? "paper.pdf";
+  return leaf.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 255) || "paper.pdf";
 }
 
 export function nextRunLabel(cadence: string) {

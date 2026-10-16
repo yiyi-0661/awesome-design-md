@@ -1,45 +1,38 @@
 import { NextResponse } from "next/server";
 import { analyzePaper } from "@/lib/server/analysis";
+import { analysisErrorResponse } from "@/lib/server/analysis-http";
+import { ANALYSIS_MAX_FILE_BYTES, ANALYSIS_TUS_CHUNK_SIZE, processAnalysisJob } from "@/lib/server/analysis-jobs";
 import { hasAnalysisModelConfig } from "@/lib/server/deepseek";
-import { requireOwner } from "@/lib/server/supabase";
-import { isTextPdf } from "@/lib/validation";
-import { ZodError } from "zod";
+import { hasSupabaseServiceConfig, requireOwner } from "@/lib/server/supabase";
+import { analysisStartSchema, isTextPdf } from "@/lib/validation";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-function errorResponse(error: unknown) {
-  const message = error instanceof Error ? error.message : "ANALYSIS_FAILED";
-  if (message === "OWNER_REQUIRED") return NextResponse.json({ error: "Sign in with the authorized GitHub account." }, { status: 401 });
-  if (message === "PDF_TEXT_UNAVAILABLE") return NextResponse.json({ error: "This PDF has no extractable text. OCR the document and try again." }, { status: 422 });
-  if (message === "BIBLIOGRAPHY_UNAVAILABLE") return NextResponse.json({ error: "No verifiable literature candidates could be retrieved. Try again later." }, { status: 502 });
-  if (message === "MODEL_NOT_CONFIGURED") return NextResponse.json({ error: "DeepSeek is not configured on the server." }, { status: 503 });
-  if (message.startsWith("MODEL_REQUEST_FAILED")) return NextResponse.json({ error: "DeepSeek could not complete the analysis.", detail: message }, { status: 502 });
-  if (message === "MODEL_OUTPUT_INCOMPLETE" || message.startsWith("MODEL_SELECTED_") || error instanceof SyntaxError || error instanceof ZodError) {
-    if (error instanceof ZodError) {
-      console.error("DeepSeek schema validation failed", error.issues.map(({ code, path, message: issue }) => ({ code, path, issue })));
-    } else {
-      console.error("DeepSeek structured output failed", error instanceof SyntaxError ? "INVALID_JSON" : message);
-    }
-    return NextResponse.json({ error: "DeepSeek returned an invalid structured result. Please retry." }, { status: 502 });
-  }
-  console.error("Analysis failed", error);
-  return NextResponse.json({ error: "The paper could not be analyzed." }, { status: 500 });
-}
-
 export async function GET() {
+  const uploadMode = hasSupabaseServiceConfig() ? "supabase-tus" : "direct-form";
   return NextResponse.json({
     configured: hasAnalysisModelConfig(),
     provider: "DeepSeek",
     model: process.env.LLM_MODEL ?? process.env.DEEPSEEK_MODEL ?? "deepseek-flash",
-    maxFileBytes: 30 * 1024 * 1024
+    maxFileBytes: ANALYSIS_MAX_FILE_BYTES,
+    uploadMode,
+    supabaseUrl: uploadMode === "supabase-tus" ? process.env.NEXT_PUBLIC_SUPABASE_URL : undefined,
+    bucket: uploadMode === "supabase-tus" ? "analysis-inputs" : undefined,
+    chunkSize: ANALYSIS_TUS_CHUNK_SIZE
   });
 }
 
 export async function POST(request: Request) {
   try {
-    await requireOwner();
+    const owner = await requireOwner();
     if (!hasAnalysisModelConfig()) throw new Error("MODEL_NOT_CONFIGURED");
+    if ((request.headers.get("content-type") ?? "").includes("application/json")) {
+      const { jobId } = analysisStartSchema.parse(await request.json());
+      return NextResponse.json({ result: await processAnalysisJob(owner.id, jobId) }, { status: 201 });
+    }
+
+    // Compatibility path for local development and rollback. Production uses TUS + jobId.
     const form = await request.formData();
     const file = form.get("paper");
     const consent = form.get("externalProcessingConsent") === "true";
@@ -48,6 +41,6 @@ export async function POST(request: Request) {
     const result = await analyzePaper(file);
     return NextResponse.json({ result }, { status: 201 });
   } catch (error) {
-    return errorResponse(error);
+    return analysisErrorResponse(error);
   }
 }

@@ -7,6 +7,7 @@ import { extractPaper } from "./pdf";
 type Dependencies = {
   findCandidates?: typeof findVerifiedCandidates;
   analyze?: typeof analyzeWithDeepSeek;
+  onStage?: (stage: "tracing" | "analyzing" | "reviewing") => void | Promise<void>;
 };
 
 function candidateMap(candidates: PaperCandidate[]) {
@@ -48,7 +49,10 @@ export function presentAnalysis(fileName: string, title: string, output: Analysi
 
 export async function analyzePaper(file: File, dependencies: Dependencies = {}) {
   const extraction = await extractPaper(file);
+  await dependencies.onStage?.("tracing");
   const candidates = await (dependencies.findCandidates ?? findVerifiedCandidates)(extraction.text, extraction.title);
+  await dependencies.onStage?.("analyzing");
   const output = await (dependencies.analyze ?? analyzeWithDeepSeek)(extraction.text, extraction.title, candidates);
+  await dependencies.onStage?.("reviewing");
   return presentAnalysis(file.name, extraction.title, output, candidates, extraction);
 }
