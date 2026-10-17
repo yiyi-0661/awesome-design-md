@@ -216,6 +216,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .markdown-body h1, .markdown-body h2, .markdown-body h3 { font-family: "Newsreader", serif; font-weight: 400; line-height: 1.15; }
 .markdown-body h1 { color: var(--blue); font-size: 46px; }
 .markdown-body h2 { border-top: 1px solid var(--line); font-size: 31px; margin-top: 38px; padding-top: 24px; }
+.markdown-body a { color: var(--blue); text-decoration-color: color-mix(in srgb, var(--blue) 35%, transparent); text-underline-offset: 3px; }
+.markdown-body a:hover { text-decoration-color: var(--blue); }
+.markdown-body img { background: var(--blue-soft); border: 1px solid var(--line); display: block; height: auto; margin: 26px 0 10px; width: 100%; }
 .markdown-body table { border-collapse: collapse; width: 100%; }
 .markdown-body th, .markdown-body td { border-bottom: 1px solid var(--line); padding: 10px; text-align: left; }
 .markdown-body code { background: var(--blue-soft); padding: 2px 4px; }

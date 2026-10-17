@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { defaultSettings, demoMethods } from "@/lib/demo-data";
+import { mergeBundledMethods } from "@/lib/method-library";
 import type { MethodArticle, UpdateSettings } from "@/lib/types";
 
 type Workspace = {
@@ -29,7 +30,11 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     const savedSettings = window.localStorage.getItem("li-lab-settings");
     queueMicrotask(() => {
       try {
-        if (savedMethods) setMethods(JSON.parse(savedMethods) as MethodArticle[]);
+        if (savedMethods) {
+          const mergedMethods = mergeBundledMethods(JSON.parse(savedMethods) as MethodArticle[]);
+          setMethods(mergedMethods);
+          window.localStorage.setItem("li-lab-methods", JSON.stringify(mergedMethods));
+        }
         if (savedSettings) setSettings(JSON.parse(savedSettings) as UpdateSettings);
       } catch {
         window.localStorage.removeItem("li-lab-methods");

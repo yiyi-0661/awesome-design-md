@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 760" role="img" aria-labelledby="title desc">
+  <title id="title">Repair-and-conjugate DNA catalyst workflow</title>
+  <desc id="desc">A conceptual workflow showing uracil-containing DNA, enzymatic base excision, aldehyde formation, bioorthogonal catalyst attachment, and library screening.</desc>
+  <rect width="1400" height="760" fill="#f3f7fb"/>
+  <text x="72" y="78" fill="#7f8790" font-family="IBM Plex Mono, monospace" font-size="22" letter-spacing="2">CONCEPTUAL METHOD MAP · NOT A PUBLISHED FIGURE</text>
+  <text x="72" y="132" fill="#13213a" font-family="Newsreader, Georgia, serif" font-size="42">Repair creates the handle; conjugation creates the library</text>
+  <g font-family="IBM Plex Mono, monospace" font-size="17" fill="#7f8790">
+    <text x="83" y="214">01 · ENCODE</text><text x="386" y="214">02 · EXCISE</text><text x="698" y="214">03 · CONJUGATE</text><text x="1036" y="214">04 · SCREEN</text>
+  </g>
+  <g fill="none" stroke-linecap="round">
+    <path d="M90 324 C140 254 205 394 258 324" stroke="#1684ef" stroke-width="7"/>
+    <path d="M90 402 C140 472 205 332 258 402" stroke="#86bef5" stroke-width="7"/>
+    <g stroke="#b7d6f6" stroke-width="3"><path d="M112 301v124"/><path d="M150 297v132"/><path d="M188 336v54"/><path d="M226 349v28"/></g>
+  </g>
+  <circle cx="188" cy="336" r="22" fill="#f06fa5"/>
+  <text x="188" y="343" fill="#fff" font-family="IBM Plex Mono, monospace" font-size="19" text-anchor="middle">dU</text>
+  <path d="M280 364 H350" stroke="#1684ef" stroke-width="4"/><path d="M350 364 l-17 -10 v20 z" fill="#1684ef"/>
+  <circle cx="466" cy="364" r="86" fill="#fff" stroke="#4fc582" stroke-width="4"/>
+  <text x="466" y="354" fill="#13213a" font-family="Newsreader, Georgia, serif" font-size="31" text-anchor="middle">UDG</text>
+  <text x="466" y="390" fill="#7f8790" font-family="IBM Plex Sans, sans-serif" font-size="19" text-anchor="middle">base excision</text>
+  <path d="M554 364 H630" stroke="#1684ef" stroke-width="4"/><path d="M630 364 l-17 -10 v20 z" fill="#1684ef"/>
+  <path d="M692 319 C734 278 784 278 826 319" fill="none" stroke="#1684ef" stroke-width="7"/>
+  <path d="M692 409 C734 450 784 450 826 409" fill="none" stroke="#86bef5" stroke-width="7"/>
+  <circle cx="759" cy="364" r="24" fill="#fff" stroke="#f06fa5" stroke-width="4"/>
+  <text x="759" y="371" fill="#13213a" font-family="IBM Plex Mono, monospace" font-size="17" text-anchor="middle">CHO</text>
+  <path d="M840 364 H925" stroke="#1684ef" stroke-width="4"/><path d="M925 364 l-17 -10 v20 z" fill="#1684ef"/>
+  <g transform="translate(966 321)"><path d="M0 43 L38 0 L76 43 L38 86 Z" fill="#fff" stroke="#f06fa5" stroke-width="4"/><circle cx="38" cy="43" r="10" fill="#4fc582"/></g>
+  <text x="1004" y="435" fill="#13213a" font-family="IBM Plex Sans, sans-serif" font-size="19" text-anchor="middle">catalyst module</text>
+  <path d="M1058 364 H1135" stroke="#1684ef" stroke-width="4"/><path d="M1135 364 l-17 -10 v20 z" fill="#1684ef"/>
+  <g transform="translate(1171 280)" fill="#fff" stroke="#1684ef" stroke-width="3">
+    <rect width="76" height="76"/><rect x="88" width="76" height="76"/><rect y="88" width="76" height="76"/><rect x="88" y="88" width="76" height="76"/>
+    <circle cx="38" cy="38" r="10" fill="#f06fa5"/><circle cx="126" cy="38" r="10" fill="#4fc582"/><circle cx="38" cy="126" r="10" fill="#1684ef"/><circle cx="126" cy="126" r="10" fill="#13213a"/>
+  </g>
+  <text x="1253" y="479" fill="#13213a" font-family="Newsreader, Georgia, serif" font-size="34" text-anchor="middle">44 hybrids</text>
+  <rect x="90" y="557" width="1220" height="92" fill="#fff" stroke="#d4dde6" stroke-width="2"/>
+  <text x="120" y="593" fill="#7f8790" font-family="IBM Plex Mono, monospace" font-size="18">MODULAR DESIGN SPACE</text>
+  <text x="120" y="628" fill="#13213a" font-family="IBM Plex Sans, sans-serif" font-size="22">DNA fold × attachment site × linker × catalyst module → stereoselective output</text>
+</svg>

@@ -68,53 +68,153 @@ export const demoIssues: ResearchIssue[] = [
 export const demoMethods: MethodArticle[] = [
   {
     id: "method-1",
-    slug: "dna-as-a-chiral-scaffold",
-    title: "DNA as a programmable chiral scaffold",
-    excerpt: "A working note on sequence, conformation, metal coordination, and the origin of selectivity.",
-    content: `# DNA as a programmable chiral scaffold
+    slug: "dna-phosphates-as-ion-pairing-catalysts",
+    title: "DNA phosphates as catalytic handles for asymmetric ion pairing",
+    excerpt: "How phosphate groups in the DNA backbone organize cationic reagents and transmit stereochemical information in water.",
+    content: `# DNA phosphates as catalytic handles for asymmetric ion pairing
 
-DNA catalysis is most useful when the helix is treated as a **tunable reaction environment**, not a passive ligand.
+**Paper** · Z. Li, Y. Zheng, Q. Zhao, et al. *Nature Catalysis* **8**, 1220–1231 (2025)
 
-## Working model
+**Links** · [Original paper](https://doi.org/10.1038/s41929-025-01437-z) · [Nature article page](https://www.nature.com/articles/s41929-025-01437-z) · [Research news](https://www.sciencedaily.com/releases/2025/11/251108083914.htm)
 
-1. The metal complex defines the immediate coordination geometry.
-2. The DNA fold controls local hydration and substrate access.
-3. Sequence and secondary structure reshape the ensemble of productive poses.
+## The question
 
-## Questions to test
+DNA-based asymmetric catalysis is usually explained through base-pair sequence, helical shape, hydrophobic pockets, or a metal complex attached to the duplex. This paper asks whether a less conspicuous part of DNA—the negatively charged **phosphate backbone**—can participate directly in catalysis.
 
-- Does a change in enantioselectivity track a measurable structural transition?
-- Which observations distinguish binding from true transition-state stabilization?
-- Can the same scaffold transfer across related reaction classes?
+The authors' proposal is electrostatic: a DNA phosphate can form an ion pair with a positively charged reagent. If that association occurs close to the chiral double helix, the backbone may help position the reagent, accelerate reaction, and favor one stereochemical pathway over another.
 
-The note remains a hypothesis map, not a mechanism claim.`,
-    tags: ["DNA", "CATALYSIS", "METHOD"],
+![Li Lab schematic of DNA-phosphate ion-pairing catalysis](/methods/dna-phosphate-ion-pairing.svg)
+
+*Li Lab schematic. This is an editorial interpretation of the workflow, not a reproduction of a published figure.*
+
+## The method: phosphorothioate scanning
+
+The key experimental strategy is **PS scanning**. At one backbone position at a time, a non-bridging oxygen in a phosphate group is replaced with sulfur to create a phosphorothioate linkage. This is a deliberately local perturbation: it retains the DNA scaffold while changing the electrostatic, steric, and polarizability profile of a selected backbone site.
+
+1. Start with a DNA catalyst that gives measurable asymmetric induction.
+2. Prepare a panel of variants carrying a phosphorothioate at different positions.
+3. Run the same reaction with each variant under matched conditions.
+4. Compare conversion and enantioselectivity to map backbone positions that influence catalysis.
+5. Use computation to examine how cations, phosphate sites, and the DNA environment reorganize around one another.
+
+Because a phosphorothioate linkage can introduce additional stereochemical complexity, a change in outcome is best read as evidence that a position matters—not as proof that a single static contact is the entire mechanism.
+
+## What the work demonstrates
+
+Experimental and computational results support a role for DNA phosphates in both **rate acceleration** and **stereoinduction** through interactions with cationic reaction partners. The study also describes the interaction as dynamic and cation-dependent: the catalytic environment adapts rather than behaving like a rigid lock-and-key pocket.
+
+The approach was applied across three reaction families:
+
+- asymmetric fluorination;
+- Mannich reactions;
+- photo-induced cross-dehydrogenative coupling.
+
+That breadth matters because it moves the phosphate effect beyond a single isolated transformation. More importantly, PS scanning turns the backbone into something that can be interrogated position by position.
+
+## Why this changes the design model
+
+The practical lesson is that DNA should not be reduced to a passive chiral wall around a conventional catalyst. Its repeating phosphate groups form a chemically addressable surface. Sequence, fold, counterions, local phosphate identity, and the charge state of the reagent can therefore be treated as coupled design variables.
+
+A useful design loop is:
+
+| Step | Design question |
+| --- | --- |
+| Map | Which phosphate positions affect rate or selectivity? |
+| Perturb | Does changing the linkage or cation change the outcome? |
+| Model | Which transient ion-paired arrangements are compatible with the data? |
+| Transfer | Does the same positional logic survive a new substrate or reaction class? |
+
+## Evidence boundary
+
+The work establishes that phosphate-site perturbations and cation-dependent interactions can influence catalytic performance in the reported systems. It does **not** mean every DNA-catalyzed reaction is controlled by the same phosphate contact, nor that a computationally favored structure is a directly observed transition state. Generality across broader substrates, catalyst loadings, scales, and aqueous media remains an experimental question.
+
+## Reading takeaways
+
+- Treat the DNA backbone as part of the catalytic interface, not merely structural support.
+- Use PS scanning as a positional diagnostic before making a detailed mechanism claim.
+- Separate a site's effect on binding, rate, and stereoselectivity with matched controls.
+- Test cation identity explicitly; the catalytic assembly is dynamic and condition-dependent.
+
+### Citation
+
+Li, Z.; Zheng, Y.; Zhao, Q.; et al. “DNA phosphates are effective catalysts for asymmetric ion-pairing catalysis in water.” *Nature Catalysis* **8**, 1220–1231 (2025). [https://doi.org/10.1038/s41929-025-01437-z](https://doi.org/10.1038/s41929-025-01437-z)`,
+    tags: ["DNA", "ION PAIRING", "ASYMMETRIC CATALYSIS"],
     status: "published",
     author: "Li Lab",
-    updatedAt: "2026-10-13T10:30:00+08:00",
-    version: 3
+    updatedAt: "2025-10-31T00:00:00+08:00",
+    version: 1
   },
   {
     id: "method-2",
-    slug: "reading-catalysis-papers",
-    title: "A compact protocol for reading catalysis papers",
-    excerpt: "Separate observation, model, and mechanism before comparing catalytic systems.",
-    content: `# A compact protocol for reading catalysis papers
+    slug: "dna-repair-bioorthogonal-catalyst-libraries",
+    title: "A repair-and-conjugate workflow for building DNA catalyst libraries",
+    excerpt: "How base-excision repair and bioorthogonal ligation make diverse DNA hybrid catalysts easier to assemble and screen.",
+    content: `# A repair-and-conjugate workflow for building DNA catalyst libraries
 
-Start with the **measured outcome**, then reconstruct the chain from experimental setup to interpretation.
+**Paper** · J. Sheng, Z. Li, K. K. Y. Koh, et al. *Journal of the American Chemical Society* **146**, 16531–16539 (2024)
 
-| Layer | Question |
+**Links** · [Original paper](https://doi.org/10.1021/jacs.4c03210) · [PubMed record](https://pubmed.ncbi.nlm.nih.gov/38860598/) · [NUS research summary](https://www.science.nus.edu.sg/blog/2024/10/asymmetric-catalysis-with-dna-hybrid-catalysts/)
+
+## The bottleneck
+
+DNA hybrid catalysis combines a programmable chiral biomolecule with a synthetic catalytic group. The concept is modular, but making many variants can be laborious when every catalyst requires a separately modified oligonucleotide or specialized solid-phase synthesis.
+
+This paper reframes that preparation problem as a two-stage workflow: let a DNA repair enzyme create a chemically useful site, then attach diverse catalyst modules through a bioorthogonal reaction. A common DNA precursor can therefore support a much broader screening library.
+
+![Li Lab schematic of the DNA repair and bioorthogonal conjugation workflow](/methods/dna-repair-conjugation.svg)
+
+*Li Lab schematic. This is an editorial interpretation of the workflow, not a reproduction of a published figure.*
+
+## The method: repair, reveal, conjugate
+
+The design borrows the selectivity of **base-excision repair**. A uracil-DNA glycosylase recognizes deoxyuridine in DNA and removes the base, generating an abasic site with a reactive aldehyde form. That handle can then react with compatible catalyst modules through oxime- or hydrazone-forming chemistry.
+
+1. **Encode the attachment site.** Place deoxyuridine at a chosen position in an otherwise standard DNA sequence.
+2. **Reveal a chemical handle.** Use the repair enzyme to excise uracil and expose the abasic aldehyde equilibrium.
+3. **Conjugate under mild conditions.** Couple the DNA handle to a catalyst-bearing nucleophile using a bioorthogonal ligation.
+4. **Screen composition and position.** Recombine DNA environments with catalyst modules carrying different, unprotected functional groups.
+
+The authors used this strategy to assemble a library of **44 DNA hybrid catalysts**. The significance of that number is methodological: the platform makes parallel diversification practical without rebuilding every oligonucleotide from the beginning.
+
+## What the work demonstrates
+
+The library accommodates catalyst modules with varied unprotected functional groups and enables a faster route from molecular design to catalytic screening. According to the paper and the accompanying NUS summary, optimized hybrids improved stereoselectivity, substrate scope, and reaction efficiency relative to earlier versions of the system.
+
+The study also reports the **first atroposelective DNA catalysis**. This extends DNA asymmetric catalysis from controlling a stereogenic center to controlling axial chirality—a demanding test of whether the hybrid environment can distinguish rotational pathways.
+
+## Why the workflow is reusable
+
+The most transferable idea is not one optimized catalyst but the separation of roles:
+
+| Module | Role |
 | --- | --- |
-| Observation | What was directly measured? |
-| Comparison | Which control makes the effect interpretable? |
-| Model | What explanation is consistent with the data? |
-| Mechanism | What additional evidence would make the claim causal? |
+| DNA sequence and fold | Provides the chiral microenvironment |
+| Repair substrate | Defines where the attachment handle appears |
+| Repair enzyme | Performs site-selective chemical editing |
+| Bioorthogonal linker | Connects biological and synthetic modules |
+| Catalyst library | Explores reactivity and stereochemical control |
 
-This separation prevents an attractive mechanistic diagram from outrunning the evidence.`,
-    tags: ["CATALYSIS", "READING"],
+This architecture turns catalyst discovery into a combinatorial problem. The DNA, attachment position, linker, and catalytic group can be varied independently enough to support systematic screening while remaining part of one coupled catalytic assembly.
+
+## Evidence boundary
+
+The paper demonstrates accessibility and versatility for the reported library and transformations. It does not remove the need to characterize conjugation efficiency, abasic-site stability, catalyst composition, or structure–selectivity relationships for each new system. A successful screen identifies a productive combination; it does not by itself reveal why that combination works.
+
+## Reading takeaways
+
+- Use biological recognition to install a site-selective synthetic handle.
+- Keep one DNA precursor modular so chemical diversity can be introduced late.
+- Track conjugation yield and catalyst identity before comparing reaction outcomes.
+- Treat library screening as hypothesis generation, then test the best hits with mechanistic controls.
+- Consider axial as well as central chirality when evaluating the reach of a DNA microenvironment.
+
+### Citation
+
+Sheng, J.; Li, Z.; Koh, K. K. Y.; et al. “Merging DNA Repair with Bioorthogonal Conjugation Enables Accessible and Versatile Asymmetric DNA Catalysis.” *J. Am. Chem. Soc.* **146**, 16531–16539 (2024). [https://doi.org/10.1021/jacs.4c03210](https://doi.org/10.1021/jacs.4c03210)`,
+    tags: ["DNA REPAIR", "BIOORTHOGONAL CHEMISTRY", "CATALYST SCREENING"],
     status: "published",
     author: "Li Lab",
-    updatedAt: "2026-10-10T16:00:00+08:00",
+    updatedAt: "2024-06-11T00:00:00+08:00",
     version: 1
   }
 ];
