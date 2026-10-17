@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 760" role="img" aria-labelledby="title desc">
+  <title id="title">DNA phosphate ion-pairing catalysis</title>
+  <desc id="desc">A conceptual diagram showing phosphates on a DNA helix organizing a cationic reagent in water, phosphorothioate scanning, and three reaction families.</desc>
+  <rect width="1400" height="760" fill="#f3f7fb"/>
+  <text x="72" y="78" fill="#7f8790" font-family="IBM Plex Mono, monospace" font-size="22" letter-spacing="2">CONCEPTUAL METHOD MAP · NOT A PUBLISHED FIGURE</text>
+  <text x="72" y="132" fill="#13213a" font-family="Newsreader, Georgia, serif" font-size="42">Backbone charge becomes a catalytic design variable</text>
+  <path d="M112 270 C245 150 390 390 528 270 S806 150 944 270" fill="none" stroke="#1684ef" stroke-width="8"/>
+  <path d="M112 410 C245 530 390 290 528 410 S806 530 944 410" fill="none" stroke="#86bef5" stroke-width="8"/>
+  <g stroke="#b7d6f6" stroke-width="3">
+    <path d="M160 241 L160 439"/><path d="M225 213 L225 467"/><path d="M290 224 L290 456"/><path d="M355 283 L355 397"/><path d="M420 327 L420 353"/><path d="M485 300 L485 380"/><path d="M550 247 L550 433"/><path d="M615 210 L615 470"/><path d="M680 221 L680 459"/><path d="M745 276 L745 404"/><path d="M810 325 L810 355"/><path d="M875 305 L875 375"/>
+  </g>
+  <g fill="#1684ef" font-family="IBM Plex Mono, monospace" font-size="20" text-anchor="middle">
+    <g transform="translate(225 213)"><circle r="24" fill="#fff" stroke="#1684ef" stroke-width="3"/><text y="7">P−</text></g>
+    <g transform="translate(550 247)"><circle r="24" fill="#fff" stroke="#1684ef" stroke-width="3"/><text y="7">P−</text></g>
+    <g transform="translate(745 276)"><circle r="24" fill="#fff" stroke="#1684ef" stroke-width="3"/><text y="7">P−</text></g>
+  </g>
+  <path d="M1025 228 C970 228 932 241 884 270" fill="none" stroke="#f06fa5" stroke-width="4" stroke-dasharray="10 10"/>
+  <circle cx="1060" cy="228" r="53" fill="#fff" stroke="#f06fa5" stroke-width="4"/>
+  <text x="1060" y="220" fill="#13213a" font-family="IBM Plex Sans, sans-serif" font-size="22" text-anchor="middle">cationic</text>
+  <text x="1060" y="250" fill="#13213a" font-family="IBM Plex Sans, sans-serif" font-size="22" text-anchor="middle">reagent +</text>
+  <path d="M1118 228 H1245" stroke="#4fc582" stroke-width="5"/>
+  <path d="M1245 228 l-18 -11 v22 z" fill="#4fc582"/>
+  <text x="1280" y="215" fill="#13213a" font-family="IBM Plex Sans, sans-serif" font-size="22" text-anchor="middle">chiral</text>
+  <text x="1280" y="245" fill="#13213a" font-family="IBM Plex Sans, sans-serif" font-size="22" text-anchor="middle">product</text>
+  <rect x="168" y="566" width="315" height="88" fill="#fff" stroke="#d4dde6" stroke-width="2"/>
+  <text x="194" y="601" fill="#7f8790" font-family="IBM Plex Mono, monospace" font-size="18">PS SCANNING</text>
+  <text x="194" y="635" fill="#13213a" font-family="IBM Plex Sans, sans-serif" font-size="22">P→S, one position at a time</text>
+  <rect x="508" y="566" width="264" height="88" fill="#fff" stroke="#d4dde6" stroke-width="2"/>
+  <text x="534" y="601" fill="#7f8790" font-family="IBM Plex Mono, monospace" font-size="18">READOUT</text>
+  <text x="534" y="635" fill="#13213a" font-family="IBM Plex Sans, sans-serif" font-size="22">rate + selectivity</text>
+  <rect x="797" y="566" width="511" height="88" fill="#fff" stroke="#d4dde6" stroke-width="2"/>
+  <text x="823" y="601" fill="#7f8790" font-family="IBM Plex Mono, monospace" font-size="18">REACTION FAMILIES</text>
+  <text x="823" y="635" fill="#13213a" font-family="IBM Plex Sans, sans-serif" font-size="21">Fluorination · Mannich · Photo-CDC</text>
+</svg>
